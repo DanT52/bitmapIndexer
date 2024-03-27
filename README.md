@@ -1,2 +1,5 @@
 # bitmapIndexer
-databases
+
+output file naming:
+
+inputFile_<sorted>_<compression>_<wordSize>
