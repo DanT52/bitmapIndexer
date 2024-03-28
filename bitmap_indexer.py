@@ -3,6 +3,7 @@
 # output file format: inputFile_<sorted>_<compression>_<wordSize>
 
 import os
+import numpy as np
 
 """
 Creates a bitmap index from a data file.
@@ -47,13 +48,17 @@ def compress_index(bitmap_index, output_path, compression_method, word_size):
     if compression_method != "WAH":
         raise ValueError("Unsupported compression method: {}".format(compression_method))
     
+    
+    
+    
+    
     def read_bitmap(file_path):
         with open(file_path, 'r') as file:
-            return file.read().strip()
+            return [line.strip() for line in file.readlines()]
     
     def write_compressed(compressed_data, file_path):
         with open(file_path, 'w') as file:
-            file.write(' '.join(compressed_data))
+            file.write('\n'.join(compressed_data))
     
     def wah_compress(bitmap, word_size):
         # Adjust for control bit
@@ -90,13 +95,142 @@ def compress_index(bitmap_index, output_path, compression_method, word_size):
         
         return compressed_data
     
-    bitmap = read_bitmap(bitmap_index)
-    compressed_data = wah_compress(bitmap, word_size)
-    write_compressed(compressed_data, output_path)
+    
+ 
 
+
+    # with open(bitmap_index, 'r') as f:
+    #     data = np.array([list(line.strip()) for line in f])
+    # data_transposed = data.transpose()
+
+
+
+
+    
+    data = import_bitmap(bitmap_index)
+    compressed_data_line = compress_wah_line(data[0], word_size)
+    print(compressed_data_line)
+
+    
+
+    #compressed_data = wah_compress(bitmap, word_size)
+    #write_compressed(compressed_data, output_path)
+    
+
+def import_bitmap(file_path):
+    with open(file_path, 'r') as f:
+        data = [list(line.strip()) for line in f]
+
+    data_transposed = list(map(list, zip(*data)))
+
+    return data_transposed
+
+
+def compress_wah_line(dataline, word_size):
+    compressed_line = ""
+    index = 0
+    literal_len = word_size - 1
+
+    def save_run(run_bit, num_of_runs):
+        compressed_line += '1' + run_bit + format(num_of_runs, 'b').zfill(literal_len - 1)
+    def save_literal(literal):
+        compressed_line += '0' + literal
+    
+    while index < len(dataline):
+        segment = dataline[index:index+literal_len]
+
+        #save current run state
+        runs = 0
+        run_type = None
+        if runs == 2**(literal_len - 1):
+            save_run(run_bit, run_length)
+            runs = 0
+            run_type = None
+
+        if len(set(segment)) == 1:
+            # The segment is a run
+            run_bit = segment[0]
+            run_length = 1
+
+            if runs == 0:
+                run_type = run_bit
+                runs += 1
+
+            elif segment[0] == run_type:
+                runs += 1
+
+            else:
+                save_run(run_type, runs)
+                run_type = run_bit
+                runs = 1
+        else:
+            if runs > 0:
+                save_run(run_type, runs)
+                runs = 0
+                run_type = None
+            save_literal(''.join(segment))
+
+
+
+
+            while index + run_length < len(dataline) and dataline[index + run_length] == run_bit:
+                run_length += 1
+                if run_length == 2**(literal_len - 1):
+                    save_run(run_bit, run_length)
+                    index += run_length
+                    run_length = 0
+            if run_length > 0:
+                save_run(run_bit, run_length)
+                index += run_length
+        else:
+            # The segment is a literal
+            literal = ''.join(segment)
+            save_literal(literal)
+            index += literal_len
+
+
+    while index < len(dataline):
+        segment = dataline[index:index+literal_len]
+
+        # Check if the segment is a run
+        if len(set(segment)) == 1:
+            # The segment is a run
+            run_bit = segment[0]
+            run_length = 1
+            while index + run_length < len(dataline) and dataline[index + run_length] == run_bit:
+                run_length += 1
+                if run_length == 2**(literal_len - 1):
+                    compressed_line += '1' + run_bit + format(run_length, 'b').zfill(literal_len - 1)
+                    index += run_length
+                    run_length = 0
+            if run_length > 0:
+                compressed_line += '1' + run_bit + format(run_length, 'b').zfill(literal_len - 1)
+                index += run_length
+        else:
+            # The segment is a literal
+            literal = '0' + ''.join(segment)
+            compressed_line += literal
+            index += literal_len
+
+    # Handle the remaining bits
+    remaining_bits = dataline[index:]
+    if remaining_bits:
+        if len(set(remaining_bits)) == 1:
+            # The remaining bits are a run
+            compressed_line += '1' + remaining_bits[0] + format(len(remaining_bits), 'b').zfill(literal_len - 1)
+        else:
+            # The remaining bits are a literal
+            literal = '0' + ''.join(remaining_bits) + '0' * (literal_len - len(remaining_bits))
+            compressed_line += literal
+
+    return compressed_line
+
+
+
+    
 
 # Additional functions as needed for sorting data, compressing with WAH, etc.
 
 
 #create_index(r"testFiles\data\animals_small.txt", r"testFiles\my_outputs", False)
-compress_index(r"testFiles\data\bitmaps\animals_small", r"testFiles\my_outputs\compressed", "WAH", 32)
+compress_index(r"testFiles/data/bitmaps/animals_small", r"testFiles\my_outputs\compressed", "WAH", 8)
