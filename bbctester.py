@@ -23,7 +23,7 @@ def test_bbc_8_small():
 
 def test_bbc_8_sorted():
     compress_index("./output/bitmaps/animals_sorted.txt_sorted","./output/compressed","BBC",8)
-    if cmp_files("./mine/compressed/animalsSorted_sorted_BBC_8", "./output/compressed/animals_sorted.txt_sorted_BBC_8"):
+    if cmp_files("./mine/compressed/animals_sorted_BBC_8", "./output/compressed/animals_sorted.txt_sorted_BBC_8"):
         print("Test BBC 8 Sorted Passed")
     else:
         print("Test BBC 8 Sorted Failed")

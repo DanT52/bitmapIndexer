@@ -65,7 +65,7 @@ def compress_index(bitmap_index, output_path, compression_method, word_size):
     bitmap_data = import_bitmap(bitmap_index)
 
     
-    real = read_nth_line('mine/compressed/animalsSorted_sorted_BBC_8', 0)
+    #real = read_nth_line('mine/compressed/animalsSorted_sorted_BBC_8', 0)
 
     # if compression_method == "BBC":
     #     compressed, _, _ = compress_bbc_line(bitmap_data[0])
@@ -144,8 +144,7 @@ def compress_bbc_line(dataline):
         elif num_of_runs >= 127 and num_of_runs < 32768:
             header+= "111"
 
-            # issue area i think ending byte actually should have 1 not 0...
-            ending_byte += "0" + bin(num_of_runs)[2:].zfill(15)
+            ending_byte += "1" + bin(num_of_runs)[2:].zfill(15)
 
         if num_of_lits == 1 and current_literals[0].count('1') == 1:
             header += "1"
@@ -341,5 +340,3 @@ def print_string_8_chars_at_a_time(s, occurrence):
 # Additional functions as needed for sorting data, compressing with WAH, etc.
 
 
-compress_index("data/bitmaps/animals_sorted","./output/compressed","BBC",8)
-#create_index(r"testFiles\data\animals_small.txt", r"testFiles\my_outputs", False)
