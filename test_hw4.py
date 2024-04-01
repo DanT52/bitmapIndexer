@@ -27,17 +27,17 @@ def test_index_sorted():
 #=========================================================================================
 #                              BBC Test (Extra Credit Only!!)
 #=========================================================================================
-# def test_bbc_8():
-#     compress_index("./output/bitmaps/animals.txt","./output/compressed","BBC",8)
-#     assert cmp_files("./mine/compressed/animals_BBC_8", "./output/compressed/animals.txt_BBC_8")
+def test_bbc_8():
+    compress_index("./output/bitmaps/animals.txt","./output/compressed","BBC",8)
+    assert cmp_files("./mine/compressed/animals_BBC_8", "./output/compressed/animals.txt_BBC_8")
 
-# def test_bbc_8_small():
-#     compress_index("./output/bitmaps/animals_small.txt","./output/compressed","BBC",8)
-#     assert cmp_files("./data/compressed/animals_small_BBC_8", "./output/compressed/animals_small.txt_BBC_8")
+def test_bbc_8_small():
+    compress_index("./output/bitmaps/animals_small.txt","./output/compressed","BBC",8)
+    assert cmp_files("./data/compressed/animals_small_BBC_8", "./output/compressed/animals_small.txt_BBC_8")
 
-# def test_bbc_8_sorted():
-#     compress_index("./output/bitmaps/animals_sorted.txt_sorted","./output/compressed","BBC",8)
-#     assert cmp_files("./data/compressed/animalSorted_sorted_BBC_8", "./output/compressed/animals_sorted.txt_sorted_BBC_8")
+def test_bbc_8_sorted():
+    compress_index("./output/bitmaps/animals_sorted.txt_sorted","./output/compressed","BBC",8)
+    assert cmp_files("./mine/compressed/animalsSorted_sorted_BBC_8", "./output/compressed/animals_sorted.txt_sorted_BBC_8")
 
 #=========================================================================================
 #                                   WAH (animals_small)

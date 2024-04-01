@@ -5,6 +5,7 @@
 import os
 import numpy as np
 
+
 """
 Creates a bitmap index from a data file.
 
@@ -48,9 +49,12 @@ def create_index(input_file, output_path, sorted):
 
 
 def compress_index(bitmap_index, output_path, compression_method, word_size):
-    if compression_method != "WAH":
+    if compression_method != "WAH" and compression_method != "BBC":
         raise ValueError("Unsupported compression method: {}".format(compression_method))
     
+    if compression_method == "BBC":
+        word_size = 8
+
     input_file_name = os.path.basename(bitmap_index)
     output_file_name = f"{input_file_name}_{compression_method}_{word_size}"
     output_file_path = os.path.join(output_path, output_file_name)
@@ -60,24 +64,44 @@ def compress_index(bitmap_index, output_path, compression_method, word_size):
 
     bitmap_data = import_bitmap(bitmap_index)
 
+    
+    real = read_nth_line('mine/compressed/animalsSorted_sorted_BBC_8', 0)
+
+    # if compression_method == "BBC":
+    #     compressed, _, _ = compress_bbc_line(bitmap_data[0])
+    #     #comparae if compressed and real are the same
+    #     #01011100110000
+    #     if real == compressed:
+    #         print("Compressed and real are the same")
+    #     else:
+    #         print("Compressed and real are different")
+    #         print_first_difference(real, compressed, 8)
+
+    #     #print_differences(real, compressed, 8)
+    #     print_string_8_chars_at_a_time(compressed, 1)
+    #     return
+
     total_fill_words = 0
     total_literals = 0
 
     with open(output_file_path, 'w') as output_file:
         for line in bitmap_data:
-            compressed_line, fill_words, literals = compress_wah_line(line, word_size)
+            compressed_line, fill_words, literals = compress_wah_line(line, word_size) if compression_method == "WAH" else compress_bbc_line(line)
             output_file.write(compressed_line + '\n')
             total_fill_words += fill_words
             total_literals += literals
 
 
     
-    print(f"Done compressing {input_file_name}")
-    print(f"Total fill words: {total_fill_words}")
-    print(f"Total literals: {total_literals}")
+    #print(f"Done compressing {input_file_name}")
+    #print(f"Total fill words: {total_fill_words}")
+    #print(f"Total literals: {total_literals}")
 
     
-
+def read_nth_line(filename, n):
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+    return lines[n]
 
     
 
@@ -96,75 +120,77 @@ def import_bitmap(file_path):
 
 def compress_bbc_line(dataline):
     compressed_line = ""
-    total_fill_words = 0
+    
+    num_of_runs = 0
+    current_literals = []
+    num_of_lits = 0
+
+    totals_runs = 0
     total_literals = 0
 
+
+    def flush_compression():
+        nonlocal compressed_line, num_of_runs, current_literals, num_of_lits, totals_runs, total_literals
+        ending_byte = ""
+        header = ""
+
+        if num_of_runs == 0:
+            header+= "000"
+        elif num_of_runs <7:
+            header +=  bin(num_of_runs)[2:].zfill(3)
+        elif num_of_runs >= 7 and num_of_runs < 127:
+            header+= "111"
+            ending_byte += "0" + bin(num_of_runs)[2:].zfill(7)
+        elif num_of_runs >= 127 and num_of_runs < 32768:
+            header+= "111"
+
+            # issue area i think ending byte actually should have 1 not 0...
+            ending_byte += "0" + bin(num_of_runs)[2:].zfill(15)
+
+        if num_of_lits == 1 and current_literals[0].count('1') == 1:
+            header += "1"
+            header += bin(current_literals[0].find('1'))[2:].zfill(4)
+            compressed_line += header + ending_byte
+        else:
+            header+= "0"
+            header += bin(num_of_lits)[2:].zfill(4)
+            compressed_line += header + ending_byte + ''.join(current_literals) 
+        totals_runs += num_of_runs
+        total_literals += num_of_lits
+        num_of_runs = 0
+        num_of_lits = 0
+        current_literals = []
+
+        
     index = 0
-    current_runs = 0
-    current_literals = ""
-    current_lit_count = 0
-    dirty_bit_location = -1
-
-    def flush_literals():
-        nonlocal compressed_line, current_literals, current_lit_count, total_literals
-        # Header for literals only, with the number of literals in bits 5-8
-        if current_lit_count > 0:
-            header = '1111' + format(current_lit_count, '04b')
-            compressed_line += header + current_literals
-            total_literals += current_lit_count
-            current_literals = ""
-            current_lit_count = 0
-
-    def flush_runs():
-        nonlocal compressed_line, current_runs, total_fill_words
-        if current_runs == 0:
-            return
-        elif current_runs <= 6:
-            # Encode directly in the header
-            compressed_line += '111' + '0000' + format(current_runs - 1, '04b')
-        elif current_runs <= 127:
-            # One byte follows the header
-            compressed_line += '111' + '0001' + format(current_runs, '08b')
-        else:
-            # Two bytes follow the header
-            compressed_line += '111' + '0010' + format(current_runs, '016b')
-        total_fill_words += current_runs
-        current_runs = 0
-
     while ((index+8) <= len(dataline)):
+
         segment = dataline[index:index+8]
-        index += 8
 
-        if len(set(segment)) == 1 and segment[0] == '0':
-            # Check if it's time to flush literals before adding more runs
-            if current_lit_count > 0:
-                flush_literals()
-            current_runs += 1
+        if len(set(segment)) == 1 and segment[0]=="0":
+            if current_literals:
+                flush_compression()
+            num_of_runs += 1
 
-        elif segment.count('1') == 1:
-            location = segment.find('1')
-            dirty_bit_location = 7 - location  # Adjusted for bit ordering in byte
-            flush_runs()  # Flush runs before handling a dirty bit
-            flush_literals()  # Make sure to flush literals as well
-            # Handle single dirty bit case
-            compressed_line += '1111' + format(dirty_bit_location, '04b') + segment
-            total_literals += 1
         else:
-            # Literal encountered
-            if current_runs > 0:
-                flush_runs()
-            current_literals += segment
-            current_lit_count += 1
-            if current_lit_count == 15:
-                flush_literals()
+            num_of_lits += 1
+            current_literals.append(''.join(segment))
+        if num_of_lits == 15:
+            flush_compression()
+        if num_of_runs == 32767:
+            flush_compression()
+        
+        index += 8
+    
+    remaining_bits = dataline[index:]
 
-    # Flush remaining runs or literals after loop completion
-    if current_runs > 0:
-        flush_runs()
-    if current_lit_count > 0:
-        flush_literals()
+    if remaining_bits:
+        current_literals += ''.join(remaining_bits).ljust(8, '0')
+        num_of_lits += 1
+    if current_literals or num_of_runs > 0:
+        flush_compression()
 
-    return compressed_line, total_fill_words, total_literals
+    return compressed_line, totals_runs, total_literals
 
 
 
@@ -238,10 +264,10 @@ def compress_wah_line(dataline, word_size):
 
 
     
-def print_differences(real, compressed):
-    for i in range(0, len(real), 4):
-        real_segment = real[i:i+4]
-        compressed_segment = compressed[i:i+4]
+def print_differences(real, compressed, wordsize):
+    for i in range(0, len(real), wordsize):
+        real_segment = real[i:i+wordsize]
+        compressed_segment = compressed[i:i+wordsize]
 
         if real_segment == compressed_segment:
             print(real_segment)
@@ -279,8 +305,41 @@ def print_first_difference(real, compressed, word_size):
         prev_real_segment = real_segment
         prev_compressed_segment = compressed_segment
 
+def print_string_8_chars_at_a_time(s, occurrence):
+    line_count = 0
+    skip_count = 0
+    header = False
+    count_after_0001 = 0
+    stop_after = 5
+    found_0001 = 0
+    for i in range(0, 8*40, 8):
+        header = False
+
+        chars = s[i:i+8]
+        if not chars or (found_0001 == occurrence and count_after_0001 >= stop_after):
+            break
+
+        if skip_count == 0:
+            print("# ", end='')
+            header = True
+        if skip_count == 0 and chars[3] == '0':
+            skip_count = int(chars[4:], 2)
+            print(skip_count)
+
+
+        if skip_count > 0 and not header:
+            print(chars + ' !')
+            skip_count -= 1
+        else:
+            print(chars)
+
+        if found_0001 == occurrence:
+            count_after_0001 += 1
+
+        line_count += 1
+
 # Additional functions as needed for sorting data, compressing with WAH, etc.
 
 
-compress_index("./output/bitmaps/animals.txt","./output/compressed","WAH",4)
+compress_index("data/bitmaps/animals_sorted","./output/compressed","BBC",8)
 #create_index(r"testFiles\data\animals_small.txt", r"testFiles\my_outputs", False)
