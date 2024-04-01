@@ -79,3 +79,31 @@ if dirty bit and no runs and no literals:
 if 32767 runs:
     flush
 
+## strat 3:
+
+So again i think we will still just keep track of:
+
+#of runs
+literals = []
+num of literals =[]
+
+this appraoch will just initially not care about dirty bits. we will just put them in the literals list with the other lits.
+
+however in the flush function we will need to check if there is just one literal and it is a dirty bit, if that is the case then we will store it properly and use a special bit.
+
+# when too flush:
+
+if 15 literals:
+    flush
+
+if literals followed by run:
+    flush
+
+if runs and lits followed by run:
+    flush
+    
+if 32767 runs:
+    flush
+
+    
+

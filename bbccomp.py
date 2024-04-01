@@ -4,62 +4,64 @@ def compress_bbc_line(dataline):
     num_of_runs = 0
     current_literals = []
     num_of_lits = 0
-    isDirtyBit = False
-    dirty_bit_position = None
+
 
     def flush_compression():
-        nonlocal compressed_line, num_of_runs, current_literals, num_of_lits, isDirtyBit, dirty_bit_position
+        nonlocal compressed_line, num_of_runs, current_literals, num_of_lits
         ending_byte = ""
         header = ""
 
         if num_of_runs == 0:
             header+= "000"
         elif num_of_runs <7:
-            pass
+            header+= "111"
         elif num_of_runs >= 7 and num_of_runs < 127:
-            pass
+            header+= "111"
         elif num_of_runs >= 127 and num_of_runs < 32768:
-            pass
+            header+= "111"
 
-        if isDirtyBit:
-            header+= "1"
-            header += bin(dirty_bit_position)[2:].zfill(4)
+        if num_of_lits == 1 and current_literals[0].find('1') != -1:
+            header += "1"
+            header += bin(current_literals[0].find('1'))[2:].zfill(4)
             compressed_line += header + ending_byte
-            flush_compression()
-            return
-
         else:
             header+= "0"
             header += bin(num_of_lits)[2:].zfill(4)
+            compressed_line += header + ''.join(current_literals) + ending_byte
+
+        num_of_runs = 0
+        num_of_lits = 0
+        current_literals = []
 
         
+    index = 0
+    while ((index+8) <= len(dataline)):
 
-        
-
-    for index in range(0, len(dataline), 8):
         segment = dataline[index:index+8]
 
-        if segment.count('0') == 8:
+        if len(set(segment)) == 1 and segment[0]=="0":
             if current_literals:
                 flush_compression()
-            current_run_length += 1
-        elif segment.count('1') == 1:
-            flush_compression()  # Ensure runs are flushed before handling a dirty bit
-            # Handle single dirty bit
-            dirty_bit_position = segment.find('1')
-            compressed_line.append(0b10000000 | dirty_bit_position)
-        else:
-            # Literal handling
-            current_literals.append(int(''.join(segment), 2))
+            num_of_runs += 1
 
-    flush_compression()  # Ensure any remaining data is flushed
+        else:
+            num_of_lits += 1
+            current_literals.append(''.join(segment))
+        if num_of_lits == 15:
+            flush_compression()
+        if num_of_runs == 32767:
+            flush_compression()
+    
+    remaining_bits = dataline[index:]
+    return compressed_line
+
 
     # Convert to binary string representation for easier verification
     compressed_line_binary = ' '.join([f'{byte:08b}' for byte in compressed_line])
     return compressed_line_binary
 
 # Test Cases
-dataline_432_zeros_3_literals = ['0'] * 432 + ['10101010', '10101010', '10101010']
+dataline_432_zeros_3_literals = ['0','0','0','0','0','0','0','0',] * 432 + ['1','0','1','0','1','0','1','0'] * 3
 expected_output_432_zeros_3_literals = "11100011 10000001 10110000 10101010 10101010 10101010"
 
 # compressed_line_432_zeros_3_literals = compress_bbc_line(dataline_432_zeros_3_literals)
