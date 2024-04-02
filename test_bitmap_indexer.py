@@ -37,7 +37,7 @@ def test_bbc_8_small():
 
 def test_bbc_8_sorted():
     compress_index("./output/bitmaps/animals_sorted.txt_sorted","./output/compressed","BBC",8)
-    assert cmp_files("./mine/compressed/animalsSorted_sorted_BBC_8", "./output/compressed/animals_sorted.txt_sorted_BBC_8")
+    assert cmp_files("./mine/compressed/animals_sorted_BBC_8", "./output/compressed/animals_sorted.txt_sorted_BBC_8")
 
 #=========================================================================================
 #                                   WAH (animals_small)
@@ -86,20 +86,20 @@ def test_wah_64():
 #========================================================================================= 
 def test_wah_4_sorted():
     compress_index("./output/bitmaps/animals_sorted.txt_sorted","./output/compressed","WAH",4)
-    assert cmp_files("./mine/compressed/animalsSorted_sorted_WAH_4", "./output/compressed/animals_sorted.txt_sorted_WAH_4")
+    assert cmp_files("./mine/compressed/animals_sorted_WAH_4", "./output/compressed/animals_sorted.txt_sorted_WAH_4")
 
 def test_wah_8_sorted():
     compress_index("./output/bitmaps/animals_sorted.txt_sorted","./output/compressed","WAH",8)
-    assert cmp_files("./mine/compressed/animalsSorted_sorted_WAH_8", "./output/compressed/animals_sorted.txt_sorted_WAH_8")
+    assert cmp_files("./mine/compressed/animals_sorted_WAH_8", "./output/compressed/animals_sorted.txt_sorted_WAH_8")
 
 def test_wah_16_sorted():
     compress_index("./output/bitmaps/animals_sorted.txt_sorted","./output/compressed","WAH",16)
-    assert cmp_files("./mine/compressed/animalsSorted_sorted_WAH_16", "./output/compressed/animals_sorted.txt_sorted_WAH_16")
+    assert cmp_files("./mine/compressed/animals_sorted_WAH_16", "./output/compressed/animals_sorted.txt_sorted_WAH_16")
 
 def test_wah_32_sorted():
     compress_index("./output/bitmaps/animals_sorted.txt_sorted","./output/compressed","WAH",32)
-    assert cmp_files("./mine/compressed/animalsSorted_sorted_WAH_32", "./output/compressed/animals_sorted.txt_sorted_WAH_32")
+    assert cmp_files("./mine/compressed/animals_sorted_WAH_32", "./output/compressed/animals_sorted.txt_sorted_WAH_32")
 
 def test_wah_64_sorted():
     compress_index("./output/bitmaps/animals_sorted.txt_sorted","./output/compressed","WAH",64)
-    assert cmp_files("./mine/compressed/animalsSorted_sorted_WAH_64", "./output/compressed/animals_sorted.txt_sorted_WAH_64")
+    assert cmp_files("./mine/compressed/animals_sorted_WAH_64", "./output/compressed/animals_sorted.txt_sorted_WAH_64")
